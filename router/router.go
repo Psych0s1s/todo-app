@@ -11,6 +11,7 @@ import (
 func NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/api/nextdate", handlers.NextDateHandler).Methods("GET")
+	r.HandleFunc("/api/task", handlers.TaskHandler).Methods("POST")
 
 	// Маршруты для статических файлов
 	webDir := "./web"
