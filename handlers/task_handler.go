@@ -59,7 +59,7 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if task.Date == nowStr {
-			// Если дата задачи совпадает с текущей, ничего не меняем
+			// Если дата задачи совпадает с текущей или больше, ничего не меняем
 		} else if parsedDate.Before(now) {
 			// Если дата задачи раньше текущей
 			if task.Repeat == "" {
@@ -74,17 +74,8 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				task.Date = nextDate
 			}
-		} else if task.Repeat != "" {
-			// Если дата задачи позже текущей и указано правило повторения
-			nextDate, err := utils.NextDate(now, task.Date, task.Repeat)
-			if err != nil {
-				response := map[string]string{"error": err.Error()}
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(response)
-				return
-			}
-			task.Date = nextDate
 		}
+
 	}
 
 	id, err := db.AddTask(task.Date, task.Title, task.Comment, task.Repeat)

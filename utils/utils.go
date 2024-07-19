@@ -65,6 +65,7 @@ func handleDaily(now, start time.Time, repeat string) (string, error) {
 }
 
 func handleWeekly(now, start time.Time, repeat string) (string, error) {
+	// Убираем 'w' и возможный пробел после него, затем разбиваем по запятым
 	repeat = strings.TrimSpace(repeat[1:])
 	parts := strings.Split(repeat, ",")
 	if len(parts) == 0 {
@@ -73,7 +74,7 @@ func handleWeekly(now, start time.Time, repeat string) (string, error) {
 
 	daysOfWeek := []time.Weekday{}
 	for _, part := range parts {
-		day, err := strconv.Atoi(strings.TrimSpace(part))
+		day, err := strconv.Atoi(strings.TrimSpace(part)) // Преобразуем строку в число
 		if err != nil || day < 1 || day > 7 {
 			return "", fmt.Errorf("указан неверный формат: %s", repeat)
 		}
@@ -96,6 +97,7 @@ func handleWeekly(now, start time.Time, repeat string) (string, error) {
 }
 
 func findNextWeekday(start time.Time, daysOfWeek []time.Weekday) time.Time {
+	// Перебираем дни недели в списке
 	for _, day := range daysOfWeek {
 		if start.Weekday() <= day {
 			// Если текущий день недели меньше или равен указанному дню, возвращаем эту дату
@@ -164,7 +166,7 @@ func handleMonthly(now, start time.Time, repeat string) (string, error) {
 	return "", errors.New("не удалось найти следующую подходящую дату")
 }
 
-// Определяем число дней в месяце
+// определяем число дней в месяце
 func daysInMonth(month time.Month, year int) int {
 	switch month {
 	case time.February:
@@ -179,7 +181,7 @@ func daysInMonth(month time.Month, year int) int {
 	}
 }
 
-// Определяем, является ли год високосным
+// определяем, является ли год високосным
 func isLeapYear(year int) bool {
 	return year%4 == 0 && (year%100 != 0 || year%400 == 0)
 }

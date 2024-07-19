@@ -2,9 +2,11 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -79,4 +81,95 @@ func AddTask(date, title, comment, repeat string) (int64, error) {
 		return 0, err
 	}
 	return id, nil
+}
+
+// Task представляет задачу
+type Task struct {
+	ID      string `json:"id"`
+	Date    string `json:"date"`
+	Title   string `json:"title"`
+	Comment string `json:"comment"`
+	Repeat  string `json:"repeat"`
+}
+
+// GetTasks возвращает список ближайших задач из базы данных
+// В задании этого нет, но если фронтенд будет поддерживать пагинацию, то это пригодится
+
+func GetTasks(limit, offset int) ([]Task, error) {
+	now := time.Now().Format("20060102")
+	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE date >= ? ORDER BY date LIMIT ? OFFSET ?`
+	rows, err := DB.Query(query, now, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		var id int64
+		err := rows.Scan(&id, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+		if err != nil {
+			return nil, err
+		}
+		task.ID = fmt.Sprintf("%d", id)
+		tasks = append(tasks, task)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+// GetTasksByDate возвращает задачи по заданной дате
+func GetTasksByDate(date string, limit, offset int) ([]Task, error) {
+	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ? OFFSET ?`
+	rows, err := DB.Query(query, date, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		var id int64
+		err := rows.Scan(&id, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+		if err != nil {
+			return nil, err
+		}
+		task.ID = fmt.Sprintf("%d", id)
+		tasks = append(tasks, task)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+// SearchTasks выполняет поиск задач по подстроке в заголовке или комментарии
+func SearchTasks(search string, limit, offset int) ([]Task, error) {
+	searchTerm := "%" + search + "%"
+	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ? OFFSET ?`
+	rows, err := DB.Query(query, searchTerm, searchTerm, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		var id int64
+		err := rows.Scan(&id, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+		if err != nil {
+			return nil, err
+		}
+		task.ID = fmt.Sprintf("%d", id)
+		tasks = append(tasks, task)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
