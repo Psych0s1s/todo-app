@@ -191,3 +191,20 @@ func GetTaskByID(id int64) (Task, error) {
 	task.ID = fmt.Sprintf("%d", taskID)
 	return task, nil
 }
+
+// UpdateTask обновляет задачу в базе данных
+func UpdateTask(id, date, title, comment, repeat string) error {
+	query := `UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?`
+	res, err := DB.Exec(query, date, title, comment, repeat, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("задача не найдена")
+	}
+	return nil
+}
