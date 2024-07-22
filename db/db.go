@@ -208,3 +208,20 @@ func UpdateTask(id, date, title, comment, repeat string) error {
 	}
 	return nil
 }
+
+// DeleteTask удаляет задачу из базы данных
+func DeleteTask(id int64) error {
+	query := `DELETE FROM scheduler WHERE id = ?`
+	res, err := DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("задача не найдена")
+	}
+	return nil
+}

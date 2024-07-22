@@ -26,11 +26,14 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 		handleUpdateTask(w, r)
 	case http.MethodGet:
 		handleGetTask(w, r)
+	case http.MethodDelete:
+		handleDeleteTask(w, r)
 	default:
 		http.Error(w, `{"error": "Метод не поддерживается"}`, http.StatusMethodNotAllowed)
 	}
 }
 
+// Создаём задачу
 func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -53,11 +56,9 @@ func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	nowStr := now.Format(layout)
 
-	// Если поле Date пустое, устанавливаем сегодняшнюю дату
 	if task.Date == "" {
 		task.Date = nowStr
 	} else {
-		// Парсим дату из строки
 		parsedDate, err := time.Parse(layout, task.Date)
 		if err != nil {
 			response := map[string]string{"error": "Дата указана в неверном формате"}
@@ -69,7 +70,6 @@ func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		if task.Date == nowStr {
 			// Если дата задачи совпадает с текущей или больше, ничего не меняем
 		} else if parsedDate.Before(now) {
-			// Если дата задачи раньше текущей
 			if task.Repeat == "" {
 				task.Date = nowStr
 			} else {
@@ -83,7 +83,6 @@ func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 				task.Date = nextDate
 			}
 		}
-
 	}
 
 	id, err := db.AddTask(task.Date, task.Title, task.Comment, task.Repeat)
@@ -99,6 +98,7 @@ func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// Обновляем задачу
 func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -128,11 +128,9 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	nowStr := now.Format(layout)
 
-	// Если поле Date пустое, устанавливаем сегодняшнюю дату
 	if task.Date == "" {
 		task.Date = nowStr
 	} else {
-		// Парсим дату из строки
 		parsedDate, err := time.Parse(layout, task.Date)
 		if err != nil {
 			response := map[string]string{"error": "Дата указана в неверном формате"}
@@ -144,7 +142,6 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		if task.Date == nowStr {
 			// Если дата задачи совпадает с текущей или больше, ничего не меняем
 		} else if parsedDate.Before(now) {
-			// Если дата задачи раньше текущей
 			if task.Repeat == "" {
 				task.Date = nowStr
 			} else {
@@ -158,7 +155,6 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 				task.Date = nextDate
 			}
 		}
-
 	}
 
 	err := db.UpdateTask(task.ID, task.Date, task.Title, task.Comment, task.Repeat)
@@ -173,6 +169,7 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{})
 }
 
+// Получаем задачу
 func handleGetTask(w http.ResponseWriter, r *http.Request) {
 	idParam := r.URL.Query().Get("id")
 	if idParam == "" {
@@ -194,4 +191,72 @@ func handleGetTask(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	json.NewEncoder(w).Encode(task)
+}
+
+// Удаляем задачу
+func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
+	idParam := r.URL.Query().Get("id")
+	if idParam == "" {
+		http.Error(w, `{"error":"Не указан идентификатор"}`, http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		http.Error(w, `{"error":"Некорректный идентификатор"}`, http.StatusBadRequest)
+		return
+	}
+
+	err = db.DeleteTask(id)
+	if err != nil {
+		http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	json.NewEncoder(w).Encode(map[string]string{})
+}
+
+// Завершаем задачу
+func HandleCompleteTask(w http.ResponseWriter, r *http.Request) {
+	idParam := r.URL.Query().Get("id")
+	if idParam == "" {
+		http.Error(w, `{"error":"Не указан идентификатор"}`, http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		http.Error(w, `{"error":"Некорректный идентификатор"}`, http.StatusBadRequest)
+		return
+	}
+
+	task, err := db.GetTaskByID(id)
+	if err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+		return
+	}
+
+	if task.Repeat == "" {
+		err = db.DeleteTask(id)
+		if err != nil {
+			http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
+			return
+		}
+	} else {
+		nextDate, err := utils.NextDate(time.Now(), task.Date, task.Repeat)
+		if err != nil {
+			http.Error(w, `{"error":"Ошибка при расчете следующей даты"}`, http.StatusBadRequest)
+			return
+		}
+
+		err = db.UpdateTask(task.ID, nextDate, task.Title, task.Comment, task.Repeat)
+		if err != nil {
+			http.Error(w, `{"error":"Ошибка при обновлении задачи"}`, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	json.NewEncoder(w).Encode(map[string]string{})
 }

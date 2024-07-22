@@ -95,18 +95,6 @@ func handleWeekly(now, start time.Time, repeat string) (string, error) {
 	return next.Format("20060102"), nil
 }
 
-func findNextWeekday(start time.Time, daysOfWeek []time.Weekday) time.Time {
-	// Перебираем дни недели в списке
-	for _, day := range daysOfWeek {
-		if start.Weekday() <= day {
-			// Если текущий день недели меньше или равен указанному дню, возвращаем эту дату
-			return start.AddDate(0, 0, int(day-start.Weekday()))
-		}
-	}
-	// Если все дни в списке меньше текущего дня недели, добавляем 7 дней к самому первому дню в списке
-	return start.AddDate(0, 0, int(7-start.Weekday()+daysOfWeek[0]))
-}
-
 func handleMonthly(now, start time.Time, repeat string) (string, error) {
 	repeat = strings.TrimSpace(repeat[1:])
 	parts := strings.Split(repeat, " ")
@@ -163,6 +151,19 @@ func handleMonthly(now, start time.Time, repeat string) (string, error) {
 	}
 
 	return "", errors.New("не удалось найти следующую подходящую дату")
+}
+
+// ищем следующий день недели
+func findNextWeekday(start time.Time, daysOfWeek []time.Weekday) time.Time {
+	// Перебираем дни недели в списке
+	for _, day := range daysOfWeek {
+		if start.Weekday() <= day {
+			// Если текущий день недели меньше или равен указанному дню, возвращаем эту дату
+			return start.AddDate(0, 0, int(day-start.Weekday()))
+		}
+	}
+	// Если все дни в списке меньше текущего дня недели, добавляем 7 дней к самому первому дню в списке
+	return start.AddDate(0, 0, int(7-start.Weekday()+daysOfWeek[0]))
 }
 
 // определяем число дней в месяце
