@@ -65,7 +65,6 @@ func handleDaily(now, start time.Time, repeat string) (string, error) {
 }
 
 func handleWeekly(now, start time.Time, repeat string) (string, error) {
-	// Убираем 'w' и возможный пробел после него, затем разбиваем по запятым
 	repeat = strings.TrimSpace(repeat[1:])
 	parts := strings.Split(repeat, ",")
 	if len(parts) == 0 {
@@ -74,7 +73,7 @@ func handleWeekly(now, start time.Time, repeat string) (string, error) {
 
 	daysOfWeek := []time.Weekday{}
 	for _, part := range parts {
-		day, err := strconv.Atoi(strings.TrimSpace(part)) // Преобразуем строку в число
+		day, err := strconv.Atoi(strings.TrimSpace(part))
 		if err != nil || day < 1 || day > 7 {
 			return "", fmt.Errorf("указан неверный формат: %s", repeat)
 		}

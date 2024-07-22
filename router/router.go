@@ -13,6 +13,7 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/api/nextdate", handlers.NextDateHandler).Methods("GET")
 	r.HandleFunc("/api/task", handlers.TaskHandler).Methods("POST")
 	r.HandleFunc("/api/tasks", handlers.GetTasksHandler).Methods("GET")
+	r.HandleFunc("/api/task", handlers.GetTaskByIDHandler).Methods("GET")
 
 	// Маршруты для статических файлов
 	webDir := "./web"

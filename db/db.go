@@ -173,3 +173,21 @@ func SearchTasks(search string, limit, offset int) ([]Task, error) {
 	}
 	return tasks, nil
 }
+
+// GetTaskByID возвращает задачу по её идентификатору
+func GetTaskByID(id int64) (Task, error) {
+	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
+	row := DB.QueryRow(query, id)
+
+	var task Task
+	var taskID int64
+	err := row.Scan(&taskID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return Task{}, fmt.Errorf("задача не найдена")
+		}
+		return Task{}, err
+	}
+	task.ID = fmt.Sprintf("%d", taskID)
+	return task, nil
+}

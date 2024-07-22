@@ -8,6 +8,7 @@ import (
 	"todo-app/db"
 )
 
+// Обработчик для получения списка задач
 func GetTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	// В задании этого нет, но если фронтенд будет поддерживать пагинацию, то это пригодится
@@ -63,6 +64,30 @@ func GetTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	json.NewEncoder(w).Encode(response)
+}
+
+// Обработчик для получения задачи по идентификатору
+func GetTaskByIDHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := r.URL.Query().Get("id")
+	if idParam == "" {
+		http.Error(w, `{"error":"Не указан идентификатор"}`, http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		http.Error(w, `{"error":"Некорректный идентификатор"}`, http.StatusBadRequest)
+		return
+	}
+
+	task, err := db.GetTaskByID(id)
+	if err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	json.NewEncoder(w).Encode(task)
 }
 
 // Проверка на соответствие строки формату даты
