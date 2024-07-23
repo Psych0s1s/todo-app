@@ -13,23 +13,23 @@ import (
 
 var DB *sql.DB
 
-// InitDB инициализирует базу данных
+// Инициализируем базу данных
 func InitDB() {
 	// Получение пути к файлу базы данных из переменной окружения
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		// Использование текущей рабочей директории
-		cwd, err := os.Getwd()
+		appPath, err := os.Executable()
 		if err != nil {
 			log.Fatal(err)
 		}
-		dbFile = filepath.Join(cwd, "scheduler.db")
+		dbFile = filepath.Join(filepath.Dir(appPath), "scheduler.db")
 	}
 
 	log.Printf("Using database file: %s", dbFile)
 
 	var install bool
-	if _, err := os.Stat(dbFile); err != nil {
+	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
 		install = true
 	}
 
