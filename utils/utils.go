@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// NextDate вычисляет следующую дату задачи согласно правилам повторения
+// Вычисляем следующую дату задачи согласно правилам повторения
 func NextDate(now time.Time, date string, repeat string) (string, error) {
 	const layout = "20060102"
 	start, err := time.Parse(layout, date)
@@ -35,6 +35,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 	}
 }
 
+// Ежегодно
 func handleYearly(now time.Time, start time.Time) (string, error) {
 
 	next := start.AddDate(1, 0, 0)
@@ -45,6 +46,7 @@ func handleYearly(now time.Time, start time.Time) (string, error) {
 	return next.Format("20060102"), nil
 }
 
+// Ежедневно
 func handleDaily(now, start time.Time, repeat string) (string, error) {
 	parts := strings.Split(repeat, " ")
 	if len(parts) != 2 {
@@ -64,6 +66,7 @@ func handleDaily(now, start time.Time, repeat string) (string, error) {
 	return next.Format("20060102"), nil
 }
 
+// Еженедельно
 func handleWeekly(now, start time.Time, repeat string) (string, error) {
 	repeat = strings.TrimSpace(repeat[1:])
 	parts := strings.Split(repeat, ",")
@@ -95,6 +98,7 @@ func handleWeekly(now, start time.Time, repeat string) (string, error) {
 	return next.Format("20060102"), nil
 }
 
+// Ежемесячно
 func handleMonthly(now, start time.Time, repeat string) (string, error) {
 	repeat = strings.TrimSpace(repeat[1:])
 	parts := strings.Split(repeat, " ")

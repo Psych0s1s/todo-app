@@ -69,7 +69,7 @@ func InitDB() {
 	}
 }
 
-// AddTask добавляет задачу в базу данных и возвращает идентификатор новой задачи
+// Добавляем задачу в базу данных и возвращаем идентификатор новой задачи
 func AddTask(date, title, comment, repeat string) (int64, error) {
 	query := `INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`
 	res, err := DB.Exec(query, date, title, comment, repeat)
@@ -83,7 +83,7 @@ func AddTask(date, title, comment, repeat string) (int64, error) {
 	return id, nil
 }
 
-// Task представляет задачу
+// Структура задачи
 type Task struct {
 	ID      string `json:"id"`
 	Date    string `json:"date"`
@@ -92,7 +92,7 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
-// GetTasks возвращает список ближайших задач из базы данных
+// Возвращаем список ближайших задач из базы данных
 // В задании этого нет, но если фронтенд будет поддерживать пагинацию, то это пригодится
 
 func GetTasks(limit, offset int) ([]Task, error) {
@@ -121,7 +121,7 @@ func GetTasks(limit, offset int) ([]Task, error) {
 	return tasks, nil
 }
 
-// GetTasksByDate возвращает задачи по заданной дате
+// Возвращаем задачи по заданной дате
 func GetTasksByDate(date string, limit, offset int) ([]Task, error) {
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ? OFFSET ?`
 	rows, err := DB.Query(query, date, limit, offset)
@@ -147,7 +147,7 @@ func GetTasksByDate(date string, limit, offset int) ([]Task, error) {
 	return tasks, nil
 }
 
-// SearchTasks выполняет поиск задач по подстроке в заголовке или комментарии
+// Выполняем поиск задач по подстроке в заголовке или комментарии
 func SearchTasks(search string, limit, offset int) ([]Task, error) {
 	searchTerm := "%" + search + "%"
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ? OFFSET ?`
@@ -174,7 +174,7 @@ func SearchTasks(search string, limit, offset int) ([]Task, error) {
 	return tasks, nil
 }
 
-// GetTaskByID возвращает задачу по её идентификатору
+// Ввозвращаем задачу по её идентификатору
 func GetTaskByID(id int64) (Task, error) {
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
 	row := DB.QueryRow(query, id)
@@ -192,7 +192,7 @@ func GetTaskByID(id int64) (Task, error) {
 	return task, nil
 }
 
-// UpdateTask обновляет задачу в базе данных
+// Обновляем задачу в базе данных
 func UpdateTask(id, date, title, comment, repeat string) error {
 	query := `UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?`
 	res, err := DB.Exec(query, date, title, comment, repeat, id)
@@ -209,7 +209,7 @@ func UpdateTask(id, date, title, comment, repeat string) error {
 	return nil
 }
 
-// DeleteTask удаляет задачу из базы данных
+// Удаляем задачу из базы данных
 func DeleteTask(id int64) error {
 	query := `DELETE FROM scheduler WHERE id = ?`
 	res, err := DB.Exec(query, id)

@@ -10,6 +10,7 @@ import (
 	"todo-app/utils"
 )
 
+// Структура задачи
 type Task struct {
 	ID      string `db:"id" json:"id"`
 	Date    string `db:"date" json:"date"`
@@ -18,6 +19,7 @@ type Task struct {
 	Repeat  string `db:"repeat" json:"repeat"`
 }
 
+// Переключаем методы
 func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:

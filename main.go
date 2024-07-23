@@ -6,15 +6,22 @@ import (
 	"os"
 	"todo-app/db"
 	"todo-app/router"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Загружаем переменные окружения из файла .env
+	if err := godotenv.Load(); err != nil {
+		log.Println("Error loading .env file, using default values")
+	}
+
 	// Инициализация БД
 	db.InitDB()
 	defer db.DB.Close()
 
 	// Определение порта
-	port := os.Getenv("TODO_PORT")
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "7540" // Порт по умолчанию
 	}
