@@ -39,33 +39,34 @@ func InitDB() {
 	}
 	DB = db
 
-	if install {
-		log.Println("Creating new database...")
-
-		// Создание таблицы и индекса, если база данных новая
-		createTableSQL := `CREATE TABLE IF NOT EXISTS scheduler (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL CHECK(length(date) = 8),
-            title TEXT NOT NULL,
-            comment TEXT,
-            repeat TEXT CHECK(length(repeat) <= 128)
-        );`
-		_, err := DB.Exec(createTableSQL)
-		if err != nil {
-			log.Fatalf("Failed to create table: %v", err)
-		}
-
-		// Создание индекса по полю date
-		createIndexSQL := `CREATE INDEX IF NOT EXISTS idx_date ON scheduler(date);`
-		_, err = DB.Exec(createIndexSQL)
-		if err != nil {
-			log.Fatalf("Failed to create index: %v", err)
-		}
-
-		log.Println("Database created successfully.")
-	} else {
+	if !install {
 		log.Println("Database already exists.")
+		return
 	}
+
+	log.Println("Creating new database...")
+
+	// Создание таблицы и индекса, если база данных новая
+	createTableSQL := `CREATE TABLE IF NOT EXISTS scheduler (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		date TEXT NOT NULL CHECK(length(date) = 8),
+		title TEXT NOT NULL,
+		comment TEXT,
+		repeat TEXT CHECK(length(repeat) <= 128)
+	);`
+	_, err = DB.Exec(createTableSQL)
+	if err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
+
+	// Создание индекса по полю date
+	createIndexSQL := `CREATE INDEX IF NOT EXISTS idx_date ON scheduler(date);`
+	_, err = DB.Exec(createIndexSQL)
+	if err != nil {
+		log.Fatalf("Failed to create index: %v", err)
+	}
+
+	log.Println("Database created successfully.")
 }
 
 // Добавляем задачу в базу данных и возвращаем идентификатор новой задачи
@@ -93,7 +94,6 @@ type Task struct {
 
 // Возвращаем список ближайших задач из базы данных
 // В задании этого нет, но если фронтенд будет поддерживать пагинацию, то это пригодится
-
 func GetTasks(limit, offset int) ([]Task, error) {
 	now := time.Now().Format("20060102")
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE date >= ? ORDER BY date LIMIT ? OFFSET ?`
@@ -173,7 +173,7 @@ func SearchTasks(search string, limit, offset int) ([]Task, error) {
 	return tasks, nil
 }
 
-// Ввозвращаем задачу по её идентификатору
+// Возвращаем задачу по её идентификатору
 func GetTaskByID(id int64) (Task, error) {
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
 	row := DB.QueryRow(query, id)
