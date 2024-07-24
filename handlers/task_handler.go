@@ -14,9 +14,9 @@ import (
 type Task struct {
 	ID      string `db:"id" json:"id"`
 	Date    string `db:"date" json:"date"`
-	Title   string `db:"title" json:"title"`
-	Comment string `db:"comment" json:"comment"`
-	Repeat  string `db:"repeat" json:"repeat"`
+	Title   string `db:"title"`
+	Comment string `db:"comment"`
+	Repeat  string `db:"repeat"`
 }
 
 // Переключаем методы
@@ -69,9 +69,7 @@ func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if task.Date == nowStr {
-			// Если дата задачи совпадает с текущей или больше, ничего не меняем
-		} else if parsedDate.Before(now) {
+		if task.Date != nowStr && parsedDate.Before(now) {
 			if task.Repeat == "" {
 				task.Date = nowStr
 			} else {
@@ -141,9 +139,7 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if task.Date == nowStr {
-			// Если дата задачи совпадает с текущей или больше, ничего не меняем
-		} else if parsedDate.Before(now) {
+		if task.Date != nowStr && parsedDate.Before(now) {
 			if task.Repeat == "" {
 				task.Date = nowStr
 			} else {
