@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -19,11 +18,7 @@ func InitDB() {
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		// Использование текущей рабочей директории
-		appPath, err := os.Executable()
-		if err != nil {
-			log.Fatal(err)
-		}
-		dbFile = filepath.Join(filepath.Dir(appPath), "scheduler.db")
+		dbFile = "scheduler.db"
 	}
 
 	log.Printf("Using database file: %s", dbFile)
