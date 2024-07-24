@@ -24,8 +24,12 @@ func InitDB() {
 	log.Printf("Using database file: %s", dbFile)
 
 	var install bool
-	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
-		install = true
+	if _, err := os.Stat(dbFile); err != nil {
+		if os.IsNotExist(err) {
+			install = true
+		} else {
+			log.Fatalf("Failed to check if database file exists: %v", err)
+		}
 	}
 
 	// Открытие базы данных
