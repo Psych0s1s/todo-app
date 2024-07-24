@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,9 +15,9 @@ import (
 type Task struct {
 	ID      string `db:"id" json:"id"`
 	Date    string `db:"date" json:"date"`
-	Title   string `db:"title"`
-	Comment string `db:"comment"`
-	Repeat  string `db:"repeat"`
+	Title   string `db:"title" json:"title"`
+	Comment string `db:"comment" json:"comment"`
+	Repeat  string `db:"repeat" json:"repeat"`
 }
 
 // Переключаем методы
@@ -182,8 +183,11 @@ func handleGetTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task, err := db.GetTaskByID(id)
-	if err != nil {
-		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+	if errors.Is(err, db.ErrTaskNotFound) {
+		http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, `{"error":"Ошибка при получении задачи"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -206,7 +210,10 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = db.DeleteTask(id)
-	if err != nil {
+	if errors.Is(err, db.ErrTaskNotFound) {
+		http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+		return
+	} else if err != nil {
 		http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
 		return
 	}
@@ -230,14 +237,20 @@ func HandleCompleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task, err := db.GetTaskByID(id)
-	if err != nil {
-		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+	if errors.Is(err, db.ErrTaskNotFound) {
+		http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, `{"error":"Ошибка при получении задачи"}`, http.StatusInternalServerError)
 		return
 	}
 
 	if task.Repeat == "" {
 		err = db.DeleteTask(id)
-		if err != nil {
+		if errors.Is(err, db.ErrTaskNotFound) {
+			http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+			return
+		} else if err != nil {
 			http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
 			return
 		}
