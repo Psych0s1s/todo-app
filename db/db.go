@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -182,7 +183,7 @@ func GetTaskByID(id int64) (Task, error) {
 	var taskID int64
 	err := row.Scan(&taskID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return Task{}, fmt.Errorf("задача не найдена")
 		}
 		return Task{}, err
