@@ -10,13 +10,13 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// Структура для JWT токена
+// Claims структура для JWT токена
 type Claims struct {
 	Authorized bool `json:"authorized"`
 	jwt.StandardClaims
 }
 
-// Обрабатываем запросы на аутентификацию
+// SigninHandler обрабатывает запросы на аутентификацию
 func SigninHandler(w http.ResponseWriter, r *http.Request) {
 	var credentials struct {
 		Password string `json:"password"`
@@ -26,8 +26,8 @@ func SigninHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expectedPassword := os.Getenv("TODO_PASSWORD")
-	if credentials.Password != expectedPassword {
+	expectedPassword, passwordExists := os.LookupEnv("TODO_PASSWORD")
+	if passwordExists && credentials.Password != expectedPassword {
 		http.Error(w, `{"error": "Неверный пароль"}`, http.StatusUnauthorized)
 		return
 	}
@@ -41,9 +41,9 @@ func SigninHandler(w http.ResponseWriter, r *http.Request) {
 			return []byte(expectedPassword), nil
 		})
 		if err == nil && token.Valid && claims.ExpiresAt > time.Now().Unix() {
-			// Если токен действителен, возвращаем его в ответе
+			response := map[string]string{"token": tokenStr}
 			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(map[string]string{"token": tokenStr})
+			json.NewEncoder(w).Encode(response)
 			return
 		}
 	}
@@ -72,13 +72,22 @@ func SigninHandler(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 
+	response := map[string]string{"token": tokenString}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+	json.NewEncoder(w).Encode(response)
 }
 
-// Проверяем JWT токен в заголовке запроса
+// AuthMiddleware проверяет JWT токен в заголовке запроса
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, passwordExists := os.LookupEnv("TODO_PASSWORD")
+
+		// Если пароль не установлен, пропускаем запрос без проверки
+		if !passwordExists {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		tokenCookie, err := r.Cookie("token")
 		if err != nil {
 			http.Error(w, "Authentication required", http.StatusUnauthorized)

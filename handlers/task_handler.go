@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -69,9 +70,7 @@ func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if task.Date == nowStr {
-			// Если дата задачи совпадает с текущей или больше, ничего не меняем
-		} else if parsedDate.Before(now) {
+		if task.Date != nowStr && parsedDate.Before(now) {
 			if task.Repeat == "" {
 				task.Date = nowStr
 			} else {
@@ -141,9 +140,7 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if task.Date == nowStr {
-			// Если дата задачи совпадает с текущей или больше, ничего не меняем
-		} else if parsedDate.Before(now) {
+		if task.Date != nowStr && parsedDate.Before(now) {
 			if task.Repeat == "" {
 				task.Date = nowStr
 			} else {
@@ -186,8 +183,11 @@ func handleGetTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task, err := db.GetTaskByID(id)
-	if err != nil {
-		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+	if errors.Is(err, db.ErrTaskNotFound) {
+		http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, `{"error":"Ошибка при получении задачи"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -210,7 +210,10 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = db.DeleteTask(id)
-	if err != nil {
+	if errors.Is(err, db.ErrTaskNotFound) {
+		http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+		return
+	} else if err != nil {
 		http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
 		return
 	}
@@ -234,14 +237,20 @@ func HandleCompleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task, err := db.GetTaskByID(id)
-	if err != nil {
-		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+	if errors.Is(err, db.ErrTaskNotFound) {
+		http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, `{"error":"Ошибка при получении задачи"}`, http.StatusInternalServerError)
 		return
 	}
 
 	if task.Repeat == "" {
 		err = db.DeleteTask(id)
-		if err != nil {
+		if errors.Is(err, db.ErrTaskNotFound) {
+			http.Error(w, `{"error":"задача не найдена"}`, http.StatusNotFound)
+			return
+		} else if err != nil {
 			http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
 			return
 		}

@@ -2,10 +2,10 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -13,24 +13,27 @@ import (
 
 var DB *sql.DB
 
+// Определение пользовательской ошибки
+var ErrTaskNotFound = errors.New("задача не найдена")
+
 // Инициализируем базу данных
 func InitDB() {
 	// Получение пути к файлу базы данных из переменной окружения
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		// Использование текущей рабочей директории
-		appPath, err := os.Executable()
-		if err != nil {
-			log.Fatal(err)
-		}
-		dbFile = filepath.Join(filepath.Dir(appPath), "scheduler.db")
+		dbFile = "scheduler.db"
 	}
 
 	log.Printf("Using database file: %s", dbFile)
 
 	var install bool
-	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
-		install = true
+	if _, err := os.Stat(dbFile); err != nil {
+		if os.IsNotExist(err) {
+			install = true
+		} else {
+			log.Fatalf("Failed to check if database file exists: %v", err)
+		}
 	}
 
 	// Открытие базы данных
@@ -174,7 +177,7 @@ func SearchTasks(search string, limit, offset int) ([]Task, error) {
 	return tasks, nil
 }
 
-// Ввозвращаем задачу по её идентификатору
+// Возвращаем задачу по её идентификатору
 func GetTaskByID(id int64) (Task, error) {
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
 	row := DB.QueryRow(query, id)
@@ -182,10 +185,9 @@ func GetTaskByID(id int64) (Task, error) {
 	var task Task
 	var taskID int64
 	err := row.Scan(&taskID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return Task{}, fmt.Errorf("задача не найдена")
-		}
+	if errors.Is(err, sql.ErrNoRows) {
+		return Task{}, ErrTaskNotFound
+	} else if err != nil {
 		return Task{}, err
 	}
 	task.ID = fmt.Sprintf("%d", taskID)
@@ -204,7 +206,7 @@ func UpdateTask(id, date, title, comment, repeat string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("задача не найдена")
+		return ErrTaskNotFound
 	}
 	return nil
 }
@@ -221,7 +223,7 @@ func DeleteTask(id int64) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("задача не найдена")
+		return ErrTaskNotFound
 	}
 	return nil
 }
